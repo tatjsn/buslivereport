@@ -16,7 +16,7 @@ namespace domain {
   }
 
   void Script::run() {
-    for (auto i = 0; i < 1; i++) {
+    for (auto i = 0; i < 10; i++) {
       if (i > 0) {
         std::cout << "sleep for 1m" << std::endl;
         std::this_thread::sleep_for(std::chrono::minutes(1));
