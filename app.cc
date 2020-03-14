@@ -36,10 +36,8 @@ int run_loop(Db &db, httplib::Client &cli) {
 int main() {
   Db db;
   auto host = "citymapper.com";
-  auto port = 80;
 
-  httplib::Client cli(host, port);
-  cli.set_follow_location(true);
+  httplib::SSLClient cli(host);
 
   for (auto i = 0; i < 10; i++) {
     if (i > 0) {
