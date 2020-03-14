@@ -17,7 +17,7 @@ void Db::setup() {
   sqlite3_exec(db, "create table if not exists history(id integer primary key autoincrement, version integer);", 0, 0, &err);
   auto lastHistory = getLastHistory().value_or(History {0, 0});
   if (lastHistory.version < 1) {
-    sqlite3_exec(db, "create table location(id integer primary key autoincrement, vehicle_id text, last_updated text, latitude real, longitude real);", 0, 0, &err);
+    sqlite3_exec(db, "create table location(id integer primary key autoincrement, headsign text, pattern_id text, vehicle_id text, stops_passed real, last_updated text, latitude real, longitude real);", 0, 0, &err);
     sqlite3_exec(db, "insert into history(version) values(1);", 0, 0, &err);
   }
   // if (lastHistory.version < 2) {
@@ -42,8 +42,11 @@ std::optional<History> Db::getLastHistory() {
 int Db::addLocation(quicktype::Vehicle &vehicle) {
   char *err;
   std::stringstream ss;
-  ss << "insert into location(vehicle_id, last_updated, latitude, longitude) values("
+  ss << "insert into location(headsign, pattern_id, vehicle_id, stops_passed, last_updated, latitude, longitude) values("
+    << "'" << vehicle.headsign << "',"
+    << "'" << vehicle.pattern_id << "',"
     << "'" << vehicle.vehicle_id << "',"
+    << vehicle.stops_passed << ","
     << "'" << vehicle.last_updated << "',"
     << vehicle.coords.at(0) << ","
     << vehicle.coords.at(1) << ");";
@@ -57,15 +60,15 @@ std::vector<quicktype::Vehicle> Db::getLocations() {
   sqlite3_prepare_v2(db, "select * from location;", -1, &stmt, 0);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     vehicles.push_back(quicktype::Vehicle {
-      "", // headsign
+      (char*)sqlite3_column_text(stmt, 1), // headsign
       "", // route_id
-      "", // pattern_id
-      (char*)sqlite3_column_text(stmt, 1), // vehicle_id
-      0, // stops_passed
-      (char*)sqlite3_column_text(stmt, 2), // last_update
+      (char*)sqlite3_column_text(stmt, 2), // pattern_id
+      (char*)sqlite3_column_text(stmt, 3), // vehicle_id
+      sqlite3_column_double(stmt, 4), // stops_passed
+      (char*)sqlite3_column_text(stmt, 5), // last_update
       {
-        sqlite3_column_double(stmt, 3),
-        sqlite3_column_double(stmt, 4)
+        sqlite3_column_double(stmt, 6),
+        sqlite3_column_double(stmt, 7)
       } // coords
     });
   }

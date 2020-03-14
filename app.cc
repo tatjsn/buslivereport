@@ -1,4 +1,6 @@
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include "httplib.h"
 #include "json.hpp"
 #include "types.h"
@@ -10,27 +12,46 @@ using nlohmann::to_json;
 using quicktype::Welcome;
 using quicktype::Vehicle;
 
-int main() {
-  Db db;
-  auto host = "citymapper.com";
-  auto port = 80;
-  httplib::Client cli(host, port);
-  cli.set_follow_location(true);
+int run_loop(Db &db, httplib::Client &cli) {
   auto res = cli.Get("/api/1/vehiclelocations?route=LondonBus326&region_id=uk-london");
   if (res->status != 200) {
     std::cout << "bad status=" << res->status << std::endl;
     return 1;
   }
-  std::cout << "got data" << std::endl;
   std::cout << res->body << std::endl;
 
   auto payloadJson = json::parse(res->body);
   Welcome payload;
   from_json(payloadJson, payload);
 
-  auto id = db.addLocation(payload.vehicle_locations.at(0).vehicles.at(0));
+  for (auto location: payload.vehicle_locations) {
+    for (auto vehicle: location.vehicles) {
+      auto id = db.addLocation(vehicle);
+      std::cout << "write db id=" << id << std::endl;
+    }
+  }
+  return 0;
+}
 
-  std::cout << "write db id=" << id << std::endl;
+int main() {
+  Db db;
+  auto host = "citymapper.com";
+  auto port = 80;
+
+  httplib::Client cli(host, port);
+  cli.set_follow_location(true);
+
+  for (auto i = 0; i < 1; i++) {
+    if (i > 0) {
+      std::cout << "sleep for 1 sec" << std::endl;
+      std::this_thread::sleep_for(std::chrono::minutes(1));
+    }
+    std::cout << "nth try: " << i + 1 << std::endl;
+    auto err = run_loop(db, cli);
+    if (err != 0) {
+      return err;
+    }
+  }
 
   auto vehicles = db.getLocations();
   for (auto vehicle: vehicles) {
@@ -38,5 +59,6 @@ int main() {
     to_json(j, vehicle);
     std::cout << j.dump(2) << std::endl;
   }
+
   return 0;
 }
