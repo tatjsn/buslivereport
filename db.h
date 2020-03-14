@@ -1,13 +1,13 @@
 #include <optional>
 #include <sqlite3.h>
-#include "types.h"
+#include "domain/repository.h"
 
 struct History {
   int id;
   int version;
 };
 
-class Db {
+class Db : public domain::Repository {
   private:
     sqlite3 *db;
     void setup();
@@ -15,6 +15,6 @@ class Db {
   public:
     Db();
     ~Db();
-    int addLocation(quicktype::Vehicle &vehicle);
-    std::vector<quicktype::Vehicle> getLocations();
+    int addLocation(domain::Vehicle &vehicle);
+    std::vector<domain::Vehicle> getLocations();
 };

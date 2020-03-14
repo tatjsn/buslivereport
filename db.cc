@@ -1,7 +1,6 @@
 #include <sqlite3.h>
 #include <sstream>
 #include "db.h"
-#include "types.h"
 
 Db::Db() {
   sqlite3_open("bus326.db", &db);
@@ -39,7 +38,7 @@ std::optional<History> Db::getLastHistory() {
   return history;
 }
 
-int Db::addLocation(quicktype::Vehicle &vehicle) {
+int Db::addLocation(domain::Vehicle &vehicle) {
   char *err;
   std::stringstream ss;
   ss << "insert into location(headsign, pattern_id, vehicle_id, stops_passed, last_updated, latitude, longitude) values("
@@ -54,12 +53,12 @@ int Db::addLocation(quicktype::Vehicle &vehicle) {
   return sqlite3_last_insert_rowid(db);
 }
 
-std::vector<quicktype::Vehicle> Db::getLocations() {
+std::vector<domain::Vehicle> Db::getLocations() {
   sqlite3_stmt *stmt;
-  std::vector<quicktype::Vehicle> vehicles;
+  std::vector<domain::Vehicle> vehicles;
   sqlite3_prepare_v2(db, "select * from location;", -1, &stmt, 0);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    vehicles.push_back(quicktype::Vehicle {
+    vehicles.push_back(domain::Vehicle {
       (char*)sqlite3_column_text(stmt, 1), // headsign
       "", // route_id
       (char*)sqlite3_column_text(stmt, 2), // pattern_id
