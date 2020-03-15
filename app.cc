@@ -16,7 +16,10 @@ class Service : public domain::Service {
   public:
     Service(httplib::SSLClient &client) : client(client) {}
     inline domain::Welcome getPayload() {
-      auto res = client.Get("/api/1/vehiclelocations?route=LondonBus326&region_id=uk-london");
+      auto res = client.Get(
+        "/api/1/vehiclelocations"
+        "?route=LondonBus326"
+        "&region_id=uk-london");
       if (res->status != 200) {
         std::cout << "bad status=" << res->status << std::endl;
         throw 1; // Ugh!
