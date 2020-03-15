@@ -7,5 +7,6 @@ namespace domain {
     public:
       virtual int addLocation(Vehicle &vehicle) = 0;
       virtual std::vector<Vehicle> getLocations() = 0;
+      virtual std::vector<std::string> getReports() = 0;
   };
 }

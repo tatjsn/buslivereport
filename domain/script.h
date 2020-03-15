@@ -8,12 +8,13 @@ namespace domain {
     private:
       Repository &repository;
       Service &service;
-      void run_loop();
+      void run_aggregate_single();
 
     public:
       Script(Repository &repository, Service &service) :
         repository(repository),
         service(service) {}
-      void run();
+      void run_aggregate();
+      void run_livereport();
   };
 }

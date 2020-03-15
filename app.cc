@@ -31,21 +31,48 @@ class Service : public domain::Service {
     }
 };
 
-int main() {
+void run_aggregate() {
+  Db db;
   httplib::SSLClient client {"citymapper.com"};
   Service service {client};
-  Db db;
 
   domain::Script script {db, service};
 
-  script.run();
+  script.run_aggregate();
+}
 
-  // debug dump
+void run_livereport() {
+  Db db;
+  httplib::SSLClient client {"citymapper.com"};
+  Service service {client};
+
+  domain::Script script {db, service};
+
+  script.run_livereport();
+}
+
+void run_dump() {
+  Db db;
   auto vehicles = db.getLocations();
   for (auto vehicle: vehicles) {
     json j;
     to_json(j, vehicle);
     std::cout << j.dump(2) << std::endl;
   }
+}
+
+int main(int argc, char* argv[]) {
+  std::string aggregate = "aggregate";
+  std::string livereport = "livereport";
+  std::string dump = "dump";
+
+  if (argc == 2 && aggregate.compare(argv[1]) == 0) {
+    run_aggregate();
+  } else if (argc == 2 && livereport.compare(argv[1]) == 0) {
+    run_livereport();
+  } else if (argc == 2 && dump.compare(argv[1]) == 0) {
+    run_dump();
+  }
+  std::cout << "invalid argument" << std::endl;
   return 0;
 }

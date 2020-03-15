@@ -1,3 +1,4 @@
+#include <iostream>
 #include <sqlite3.h>
 #include <sstream>
 #include "db.h"
@@ -73,4 +74,27 @@ std::vector<domain::Vehicle> Db::getLocations() {
   }
   sqlite3_finalize(stmt);
   return vehicles;
+}
+
+std::vector<std::string> Db::getReports() {
+  sqlite3_stmt *stmt;
+  std::vector<std::string> reports;
+  sqlite3_prepare_v2(
+    db,
+    "select id, vehicle_id, cast(round(stops_passed) as int) as rsp, min(datetime(last_updated)), max(datetime(last_updated)) from location"
+    " where rsp <= 23 and pattern_id='61326_Y0552659_1'"
+    " and datetime(last_updated) between datetime('now', '-30 minute') and datetime('now')"
+    " group by rsp;", -1, &stmt, 0);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    std::cout << "got a row" << std::endl;
+    std::stringstream ss;
+    ss << sqlite3_column_int(stmt, 0) // id
+    << "|" << (char*)sqlite3_column_text(stmt, 1) // vehicle_id
+    << "|" << sqlite3_column_int(stmt, 2) // vehicle_id
+    << "|" << (char*)sqlite3_column_text(stmt, 3) // min(last_updated)
+    << "|" << (char*)sqlite3_column_text(stmt, 4); // max(last_updated)
+    reports.push_back(ss.str());
+  }
+  sqlite3_finalize(stmt);
+  return reports;
 }

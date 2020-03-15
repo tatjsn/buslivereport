@@ -17,4 +17,5 @@ class Db : public domain::Repository {
     ~Db();
     int addLocation(domain::Vehicle &vehicle);
     std::vector<domain::Vehicle> getLocations();
+    std::vector<std::string> getReports();
 };
