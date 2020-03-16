@@ -83,7 +83,6 @@ std::vector<std::string> Db::getReports() {
     db,
     "select id, vehicle_id, cast(round(stops_passed) as int), datetime(last_updated), case when datetime(last_updated)=(select max(datetime(last_updated)) from location) then 'live' else '' end from location where vehicle_id in (select vehicle_id from location where datetime(last_updated) = (select max(datetime(last_updated)) from location) and cast(round(stops_passed) as int) <= 23 and pattern_id='61326_Y0552659_1') and cast(round(stops_passed) as int) <= 23 and pattern_id='61326_Y0552659_1' and datetime(last_updated) between datetime('now', '-30 minute') and datetime('now') order by vehicle_id;", -1, &stmt, 0);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
-    std::cout << "got a row" << std::endl;
     std::stringstream ss;
     ss << sqlite3_column_int(stmt, 0) // id
     << "|" << (char*)sqlite3_column_text(stmt, 1) // vehicle_id
