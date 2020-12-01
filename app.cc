@@ -1,4 +1,5 @@
 #include <iostream>
+#include <signal.h>
 #include "json.hpp"
 #include "httplib.h"
 #include "db.h"
@@ -61,6 +62,12 @@ void run_dump() {
   }
 }
 
+void signal_callback_handler(int signum) {
+   std::cout << "\e[?1049l";
+   std::cout << "Caught signal " << signum << std::endl;
+   exit(signum);
+}
+
 int main(int argc, char* argv[]) {
   std::string aggregate = "aggregate";
   std::string livereport = "livereport";
@@ -69,7 +76,10 @@ int main(int argc, char* argv[]) {
   if (argc == 2 && aggregate.compare(argv[1]) == 0) {
     run_aggregate();
   } else if (argc == 2 && livereport.compare(argv[1]) == 0) {
+    signal(SIGINT, signal_callback_handler);
+    std::cout << "\e[?1049h";
     run_livereport();
+    std::cout << "\e[?1049l";
   } else if (argc == 2 && dump.compare(argv[1]) == 0) {
     run_dump();
   }
