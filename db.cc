@@ -54,6 +54,17 @@ int Db::addLocation(domain::Vehicle &vehicle) {
   return sqlite3_last_insert_rowid(db);
 }
 
+std::string Db::getLastUpdated() {
+  sqlite3_stmt *stmt;
+  std::optional<std::string> result;
+  sqlite3_prepare_v2(db, "select * from location order by id desc limit 1;", -1, &stmt, 0);
+  while (sqlite3_step(stmt) == SQLITE_ROW) {
+    result.emplace((char*)sqlite3_column_text(stmt, 5)); // last_update
+  }
+  sqlite3_finalize(stmt);
+  return result.value_or(""); // Ugh!
+}
+
 std::vector<domain::Vehicle> Db::getLocations() {
   sqlite3_stmt *stmt;
   std::vector<domain::Vehicle> vehicles;
@@ -76,13 +87,51 @@ std::vector<domain::Vehicle> Db::getLocations() {
   return vehicles;
 }
 
-// 61326_Y0546088_1
+std::string format_query(std::string last_updated) {
+  auto pattern_id = "61326_Y0546088_1";
+  std::stringstream ss;
+  ss << "SELECT id,"
+    << " vehicle_id,"
+    << " cast(round(stops_passed) AS INT) AS stops_passed,"
+    << " DATETIME (last_updated) AS last_updated,"
+    << " CASE"
+    << "  WHEN last_updated = '" << last_updated << "'"
+    << "   THEN 'live'"
+    << "  ELSE ''"
+    << "  END AS live"
+
+    << "\n"
+    << "FROM location"
+
+    << "\n"
+    << "WHERE vehicle_id IN ("
+    << "  SELECT vehicle_id"
+    << "  FROM location"
+    << "  WHERE last_updated = '" << last_updated << "'"
+    << "   AND cast(round(stops_passed) AS INT) BETWEEN 2"
+    << "    AND 24"
+    << "   AND pattern_id = '" << pattern_id << "'"
+    << "  )"
+    << " AND cast(round(stops_passed) AS INT) BETWEEN 2"
+    << "  AND 24"
+    << " AND pattern_id = '" << pattern_id << "'"
+    << " AND DATETIME (last_updated) BETWEEN DATETIME ("
+    << "    'now',"
+    << "    '-15 minutes'"
+    << "    )"
+    << "  AND DATETIME ('now')"
+
+    << "\n"
+    << "ORDER BY vehicle_id;";
+  return ss.str();
+}
+
 std::vector<std::string> Db::getReports() {
   sqlite3_stmt *stmt;
   std::vector<std::string> reports;
   sqlite3_prepare_v2(
     db,
-    "select id, vehicle_id, cast(round(stops_passed) as int), datetime(last_updated), case when datetime(last_updated)=(select max(datetime(last_updated)) from location) then 'live' else '' end from location where vehicle_id in (select vehicle_id from location where datetime(last_updated) = (select max(datetime(last_updated)) from location) and cast(round(stops_passed) as int) <= 24 and pattern_id='61326_Y0546088_1') and cast(round(stops_passed) as int) <= 24 and pattern_id='61326_Y0546088_1' and datetime(last_updated) between datetime('now', '-30 minute') and datetime('now') order by vehicle_id;", -1, &stmt, 0);
+    format_query(getLastUpdated()).c_str(), -1, &stmt, 0);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     std::stringstream ss;
     ss << sqlite3_column_int(stmt, 0) // id

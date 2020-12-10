@@ -82,7 +82,8 @@ int main(int argc, char* argv[]) {
     std::cout << "\e[?1049l";
   } else if (argc == 2 && dump.compare(argv[1]) == 0) {
     run_dump();
+  } else {
+    std::cout << "invalid argument" << std::endl;
   }
-  std::cout << "invalid argument" << std::endl;
   return 0;
 }
