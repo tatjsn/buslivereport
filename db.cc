@@ -116,7 +116,7 @@ std::string format_query(std::string last_updated) {
     << " ) AS A"
 
     << "\n"
-    << "LEFT OUTER JOIN ("
+    << "INNER JOIN ("
     << " SELECT id,"
     << "  vehicle_id,"
     << "  cast(round(stops_passed) AS INT) AS stops_passed,"
@@ -127,9 +127,6 @@ std::string format_query(std::string last_updated) {
     << "   AND 24"
     << "  AND pattern_id = '" << pattern_id << "'"
     << " ) AS B ON A.vehicle_id = B.vehicle_id"
-
-    << "\n"
-    << "WHERE B.stops_passed IS NOT NULL"
 
     << "\n"
     << "ORDER BY B.stops_passed,"
