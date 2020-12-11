@@ -12,7 +12,6 @@ class Db : public domain::Repository {
     sqlite3 *db;
     void setup();
     std::optional<History> getLastHistory();
-    std::string getLastUpdated();
   public:
     Db();
     ~Db();

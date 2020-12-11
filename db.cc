@@ -54,17 +54,6 @@ int Db::addLocation(domain::Vehicle &vehicle) {
   return sqlite3_last_insert_rowid(db);
 }
 
-std::string Db::getLastUpdated() {
-  sqlite3_stmt *stmt;
-  std::optional<std::string> result;
-  sqlite3_prepare_v2(db, "select * from location order by id desc limit 1;", -1, &stmt, 0);
-  while (sqlite3_step(stmt) == SQLITE_ROW) {
-    result.emplace((char*)sqlite3_column_text(stmt, 5)); // last_update
-  }
-  sqlite3_finalize(stmt);
-  return result.value_or(""); // Ugh!
-}
-
 std::vector<domain::Vehicle> Db::getLocations() {
   sqlite3_stmt *stmt;
   std::vector<domain::Vehicle> vehicles;
@@ -87,9 +76,10 @@ std::vector<domain::Vehicle> Db::getLocations() {
   return vehicles;
 }
 
-std::string format_query(std::string last_updated) {
+std::string format_query() {
   auto pattern_id = "61326_Y0546088_1";
   std::stringstream ss;
+
   ss << "SELECT A.id,"
     << " A.vehicle_id,"
     << " A.stops_passed,"
@@ -122,7 +112,7 @@ std::string format_query(std::string last_updated) {
     << "  cast(round(stops_passed) AS INT) AS stops_passed,"
     << "  last_updated"
     << " FROM location"
-    << " WHERE last_updated = '" << last_updated << "'"
+    << " WHERE last_updated = (SELECT last_updated FROM location ORDER BY id DESC LIMIT 1)"
     << "  AND cast(round(stops_passed) AS INT) BETWEEN 2"
     << "   AND 24"
     << "  AND pattern_id = '" << pattern_id << "'"
@@ -139,7 +129,7 @@ std::vector<std::string> Db::getReports() {
   std::vector<std::string> reports;
   sqlite3_prepare_v2(
     db,
-    format_query(getLastUpdated()).c_str(), -1, &stmt, 0);
+    format_query().c_str(), -1, &stmt, 0);
   while (sqlite3_step(stmt) == SQLITE_ROW) {
     std::stringstream ss;
     ss << sqlite3_column_int(stmt, 0) // id
